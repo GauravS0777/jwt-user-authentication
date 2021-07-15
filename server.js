@@ -3,7 +3,7 @@ const app = express();
 const authRouter = require("./routes/auth");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
-const checkToken = require("./validateToken");
+const { validateAccessToken } = require("./validateToken");
 const User = require("./models/user");
 
 dotenv.config();
@@ -22,10 +22,10 @@ mongoose.connect(
 app.use(express.json());
 app.use("/api/user", authRouter);
 
-// only logged in person can access
-app.get("/", checkToken, async (req, res) => {
-    const { name } = await User.findOne( {_id: req.user._id });
-    res.status(200).send(`Welcome ${name}.`);
+// only logged-in person with valid access-token can access
+app.get("/", validateAccessToken, async (req, res) => {
+    const { username } = await User.findOne( { _id: req.user._id });
+    res.status(200).send(`Welcome ${username}.`);
 });
 
 app.listen(5000, () => {
