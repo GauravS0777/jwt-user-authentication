@@ -3,11 +3,11 @@ const Token = require("./models/token");
 
 // middleware
 const validateAccessToken = (req, res, next) => {
-    const token = req.header("access-token");
-    if(!token) return res.status(401).json({ error: "Access denied." });
+    const accessToken = req.header("access-token");
+    if(!accessToken) return res.status(401).json({ error: "Access denied." });
     // validate token
     try{
-        req.user = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        req.user = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         next();
     }catch(err){
         return res.status(401).json({ error: "Access denied." });
@@ -15,7 +15,7 @@ const validateAccessToken = (req, res, next) => {
 }
 
 const validateRefreshToken = async (req, res, next) => {
-    const { refreshToken } = req.body;
+    const refreshToken = req.header("refresh-token");
     if(!refreshToken) return res.status(401).json({ error: "Access denied." });
     // Check if refresh-token present in database 
     try{

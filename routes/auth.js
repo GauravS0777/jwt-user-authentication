@@ -7,13 +7,17 @@ const { validateRefreshToken } = require("../validateToken");
 
 router.post("/register", async (req, res) => {
     const { username, email, password } = req.body;
-    // see if user with the same email already exists
+    // see if user with the same email or username already exists
+    let user;
     try{
+        user = await User.findOne({ username: username });
+        if(user) return res.status(400).json({ error: "User with the same username already exists."});
         user = await User.findOne({ email: email });
         if(user) return res.status(400).json({ error: "User with the same email already exists."});
     }catch(err){
         res.json(err);
     }
+    if(password.length < 6) return res.status(400).json({ error: "Password must be of atleast 6 characters."});
     // hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -28,11 +32,11 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
     // find user
     let user;
     try{
-        user = await User.findOne({ email: email });
+        user = await User.findOne({ username: username });
     }catch(err){
         res.json(err);
     }
@@ -54,7 +58,7 @@ router.post("/login", async (req, res) => {
 });
 
 router.delete("/logout", async (req, res) => {
-    const { refreshToken } = req.body;
+    const refreshToken = req.header("refresh-token");
     if(!refreshToken) return res.status(401).json({ error: "Access denied." });
     // delete refresh-token from database
     try{
@@ -66,7 +70,7 @@ router.delete("/logout", async (req, res) => {
 })
 
 // get new access-token using refresh-token
-router.get("/token", validateRefreshToken, async (req, res) => {
+router.post("/token", validateRefreshToken, async (req, res) => {
     // create access-token
     const accessToken = jwt.sign({ _id: req.user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "5m" });
     res.status(200).json({ accessToken: accessToken });
